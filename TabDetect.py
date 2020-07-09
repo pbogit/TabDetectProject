@@ -23,7 +23,6 @@ class TabDetect:
         self.num_classes = 21
         self.count = 0
         self.input_shape = (192, 9, 1)
-        self.init_model()
         self.p = pyaudio.PyAudio()
         info = self.p.get_host_api_info_by_index(0)
         self.input_devices = []
@@ -32,9 +31,11 @@ class TabDetect:
                 self.input_devices.append(self.p.get_device_info_by_host_api_device_index(0, i).get("name"))
 
     def openStream(self, index):
-
         self.stream = self.p.open(format=pyaudio.paInt16, channels=1, rate=self.sample_rate_original,
                                   input=True, frames_per_buffer=self.chunk_size, input_device_index=index)
+
+    def closeStream(self):
+        self.stream.close()
 
     def preprocess_audio(self, data):
         data = data.astype(float)
@@ -73,26 +74,11 @@ class TabDetect:
                 tabStr = "-\n" + tabStr
         return tabStr
 
-    def init_model(self):
-        model = Sequential()
-        model.add(Conv2D(32, kernel_size=(3, 3),
-                         activation='relu',
-                         input_shape=self.input_shape))
-        model.add(Conv2D(64, (3, 3), activation='relu'))
-        model.add(Conv2D(64, (3, 3), activation='relu'))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(self.num_classes * self.num_strings))  # no activation
-        model.add(Reshape((self.num_strings, self.num_classes)))
-        model.add(Activation(self.softmax_by_string))
-        model.compile(loss=self.catcross_by_string,
-                      optimizer=keras.optimizers.Adadelta(),
-                      metrics=[self.avg_acc])
-        model.load_weights('weights.h5')
-        self.model = model
+    def init_model(self, path):
+        self.model = keras.models.load_model(path,
+                                             custom_objects={'catcross_by_string': self.catcross_by_string,
+                                                             'softmax_by_string': self.softmax_by_string,
+                                                             'avg_acc': self.avg_acc})
 
     def process(self):
         data = np.frombuffer(self.stream.read(self.chunk_size * 17, exception_on_overflow=False), dtype=np.int16)
