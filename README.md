@@ -1,4 +1,4 @@
-# TabDetectProject by Patrick Bonten
+# TabDetect by Patrick Bonten
 
 Dependencies:
 - librosa
