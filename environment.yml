@@ -65,6 +65,7 @@ dependencies:
     - scipy==1.4.1
     - six==1.15.0
     - soundfile==0.10.3.post1
+    - svgwrite==1.4
     - tensorboard==2.3.0
     - tensorboard-plugin-wit==1.7.0
     - tensorflow==2.3.0
