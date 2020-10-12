@@ -1,11 +1,15 @@
+import os
 import sys
 
+import fretboardgtr
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThreadPool
 from PyQt5.QtGui import QIcon
+from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, \
     QFileDialog, QLineEdit, QMessageBox
 import pyqtgraph as pg
+from fretboardgtr import ScaleGtr
 from matplotlib import cm
 import numpy as np
 
@@ -19,29 +23,41 @@ class TabUI:
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.handleNewData)
         self.app = QApplication(sys.argv)
+        self.threadPool = QThreadPool()
 
         self.window = QWidget()
-        self.window.setGeometry(100, 100, 1000, 350)
+        self.window.setGeometry(100, 100, 1000, 370)
         self.window.setFixedSize(1000, 350)
         self.window.setWindowTitle("TabDetect")
         self.window.setWindowIcon(QIcon("icon.png"))
 
         self.audioDevice = QComboBox()
         self.audioDevice.addItems(self.tabdetect.input_devices)
+        self.audioDevice.addItem("Audio file")
         self.startButton = QPushButton("Start")
         self.startButton.clicked.connect(self.processStartButton)
 
-        self.fileButton = QPushButton("Select model")
-        self.fileButton.clicked.connect(self.selectModel)
-        self.fileLabel = QLineEdit("No model selected")
-        self.fileLabel.setReadOnly(True)
-        self.filePicker = QWidget()        
-        self.filePicker.setFixedSize(450, 20)
-        self.filePickerLayout = QHBoxLayout()
-        self.filePickerLayout.setContentsMargins(0, 0, 0, 0)
-        self.filePicker.setLayout(self.filePickerLayout)
-        self.filePickerLayout.addWidget(self.fileButton)
-        self.filePickerLayout.addWidget(self.fileLabel)
+        self.modelFileButton = QPushButton("Select model")
+        self.modelFileButton.clicked.connect(self.selectModel)
+        self.modelFileLabel = QLineEdit("No model file selected")
+        self.modelFileWidget = QWidget()
+        self.modelFileWidget.setFixedSize(450, 20)
+        self.modelFileLayout = QHBoxLayout()
+        self.modelFileLayout.setContentsMargins(0, 0, 0, 0)
+        self.modelFileWidget.setLayout(self.modelFileLayout)
+        self.modelFileLayout.addWidget(self.modelFileButton)
+        self.modelFileLayout.addWidget(self.modelFileLabel)
+
+        self.audioFileButton = QPushButton("Select audio")
+        self.audioFileButton.clicked.connect(self.selectAudio)
+        self.audioFileLabel = QLineEdit("No audio file selected")
+        self.audioFileWidget = QWidget()
+        self.audioFileWidget.setFixedSize(450, 20)
+        self.audioFileLayout = QHBoxLayout()
+        self.audioFileLayout.setContentsMargins(0, 0, 0, 0)
+        self.audioFileWidget.setLayout(self.audioFileLayout)
+        self.audioFileLayout.addWidget(self.audioFileButton)
+        self.audioFileLayout.addWidget(self.audioFileLabel)
 
         self.topSection = QWidget()
         self.topSection.setFixedSize(450, 20)
@@ -58,14 +74,23 @@ class TabUI:
         self.tabLabelLayout.setContentsMargins(0, 0, 0, 0)
         self.tabLabels.setLayout(self.tabLabelLayout)
 
-        # TODO enter Fretboard visualization
+        self.fretboardWidget = QSvgWidget()
+        self.fretboardPath = 'tmp/tabs.svg'
+        self.fretboard = ScaleGtr()
+        self.fretboard.customtuning(['E', 'A', 'D', 'G', 'B', 'E'])
+        self.fretboard.theme(show_note_name=True, color_scale=False, last_fret=19)
+        self.fretboard.pathname(self.fretboardPath)
+        self.fretboard.draw(fingering=[None, None, None, None, None, None])
+        self.fretboard.save()
+        self.fretboardWidget.load(self.fretboardPath)
+        os.remove(self.fretboardPath)
 
         self.tabHeatWidget = pg.PlotWidget()
         self.tabHeatWidget.getPlotItem().setTitle('Constant-Q Transform')
         self.tabHeatWidget.getPlotItem().hideAxis('bottom')
         self.tabHeatWidget.getPlotItem().hideAxis('left')
         self.tabHeatMap = pg.ImageItem()
-        colormap = cm.get_cmap("plasma")  # cm.get_cmap("CMRmap")
+        colormap = cm.get_cmap("plasma")
         colormap._init()
         lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
         self.tabHeatMap.setLookupTable(lut)
@@ -76,9 +101,11 @@ class TabUI:
         self.leftWidget.setFixedWidth(500)
         self.leftLayout = QVBoxLayout()
         self.leftLayout.setSpacing(5)
-        self.leftLayout.addWidget(self.filePicker)
         self.leftLayout.addWidget(self.topSection)
+        self.leftLayout.addWidget(self.audioFileWidget)
+        self.leftLayout.addWidget(self.modelFileWidget)
         self.leftLayout.addWidget(self.tabLabels, alignment=Qt.AlignRight)
+        self.leftLayout.addWidget(self.fretboardWidget)
         self.leftWidget.setLayout(self.leftLayout)
 
         self.layout = QHBoxLayout()
@@ -94,15 +121,30 @@ class TabUI:
         filePicker.setDirectory("./")
         if filePicker.exec():
             self.modelFile = filePicker.selectedFiles()[0]
-            self.fileLabel.setText(self.modelFile)
+            self.modelFileLabel.setText(self.modelFile)
+
+    def selectAudio(self):
+        filePicker = QFileDialog()
+        filePicker.setFileMode(QFileDialog.ExistingFile)
+        filePicker.setNameFilter("Audio files (*.wav)")
+        filePicker.setDirectory("./")
+        if filePicker.exec():
+            self.audioFile = filePicker.selectedFiles()[0]
+            self.audioFileLabel.setText(self.audioFile)
 
     def processStartButton(self):
         if self.startButton.text() == "Start":
             try:
-                self.tabdetect.init_model(self.modelFile)
-                self.tabdetect.openStream(self.audioDevice.currentIndex())
-                self.timer.start(100)
-                self.startButton.setText("Stop")
+                if self.audioDevice.currentText() != "Audio file":
+                    self.tabdetect.init_model(self.modelFile)
+                    self.tabdetect.openStream(self.audioDevice.currentIndex())
+                    self.timer.start(100)
+                    self.startButton.setText("Stop")
+                else:
+                    self.tabdetect.init_model(self.modelFile)
+                    self.tabdetect.openFileStream(self.audioFile) # TODO handle file exceptions
+                    self.startButton.setText("Stop")
+                    self.threadPool.start(self.handleFileData)
             except:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -113,23 +155,42 @@ class TabUI:
                 msg.setStandardButtons(QMessageBox.Ok)
                 msg.setMinimumWidth(500)
                 msg.exec_()
-
         else:
             self.timer.stop()
             self.tabdetect.closeStream()
             for i in reversed(range(self.tabLabelLayout.count())):
                 self.tabLabelLayout.itemAt(i).widget().setParent(None)
+            self.fretboard.draw(fingering=[None, None, None, None, None, None])
+            self.fretboard.save()
+            self.fretboardWidget.load(self.fretboardPath)
+            os.remove(self.fretboardPath)
+            self.tabdetect.specs = np.zeros((25, 192))
+            self.tabHeatMap.setImage(self.tabdetect.specs)
             self.startButton.setText("Start")
 
 
     def handleNewData(self):
-        self.tabdetect.process()
+        self.tabdetect.processInput()
+        self.updateUi()
+
+    def handleFileData(self):
+        data = self.tabdetect.waveFile.readframes(self.tabdetect.chunk_size * 8)
+        while data != '':
+            self.tabdetect.processFile(data)
+            self.updateUi()
+            data = self.tabdetect.waveFile.readframes(self.tabdetect.chunk_size * 8)
+
+    def updateUi(self):
         tabs = self.tabdetect.curr_tabs
         label = QLabel(tabs)
         label.setFixedSize(18, 120)
         self.tabLabelLayout.addWidget(label, alignment=Qt.AlignRight)
         if len(self.tabLabelLayout) > 25:
             self.tabLabelLayout.itemAt(0).widget().setParent(None)
+        self.fretboard.draw(fingering=self.tabdetect.curr_frets)
+        self.fretboard.save()
+        self.fretboardWidget.load(self.fretboardPath)
+        os.remove(self.fretboardPath)
         self.tabHeatMap.setImage(self.tabdetect.specs)
 
 if __name__ == '__main__':
