@@ -23,6 +23,7 @@ class TabDetect:
         self.num_classes = 21
         self.count = 0
         self.input_shape = (192, 9, 1)
+        self.specs = np.zeros((25, 192))
         self.p = pyaudio.PyAudio()
         info = self.p.get_host_api_info_by_index(0)
         self.input_devices = []
@@ -82,7 +83,10 @@ class TabDetect:
 
     def process(self):
         data = np.frombuffer(self.stream.read(self.chunk_size * 17, exception_on_overflow=False), dtype=np.int16)
-        spec = self.preprocess_audio(data)
-        classes = self.model.predict(spec.reshape((1, 192, 9, 1)))[0]
+        self.spec = self.preprocess_audio(data)
+        self.max_value = np.amax(data)
+        self.specs = np.append(self.specs, self.spec[:,4].reshape((1, 192)), axis=0)
+        self.specs = np.delete(self.specs, 0, axis=0)
+        classes = self.model.predict(self.spec.reshape((1, 192, 9, 1)))[0]
         self.curr_tabs = self.tab2str(classes)
         self.count = 0

@@ -5,6 +5,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, \
     QFileDialog, QLineEdit, QMessageBox
+import pyqtgraph as pg
+from matplotlib import cm
+import numpy as np
 
 from TabDetect import TabDetect
 
@@ -18,8 +21,8 @@ class TabUI:
         self.app = QApplication(sys.argv)
 
         self.window = QWidget()
-        self.window.setGeometry(100, 100, 475, 190)
-        self.window.setFixedSize(475, 190)
+        self.window.setGeometry(100, 100, 1000, 350)
+        self.window.setFixedSize(1000, 350)
         self.window.setWindowTitle("TabDetect")
         self.window.setWindowIcon(QIcon("icon.png"))
 
@@ -49,16 +52,38 @@ class TabUI:
         self.topSectionLayout.addWidget(self.startButton)
 
         self.tabLabels = QWidget()
+        self.tabLabels.setMinimumHeight(100)
         self.tabLabelLayout = QHBoxLayout()
         self.tabLabelLayout.setSpacing(0)
         self.tabLabelLayout.setContentsMargins(0, 0, 0, 0)
         self.tabLabels.setLayout(self.tabLabelLayout)
 
-        self.layout = QVBoxLayout()
-        self.layout.setSpacing(5)
-        self.layout.addWidget(self.filePicker)
-        self.layout.addWidget(self.topSection)
-        self.layout.addWidget(self.tabLabels, alignment=Qt.AlignRight)
+        # TODO enter Fretboard visualization
+
+        self.tabHeatWidget = pg.PlotWidget()
+        self.tabHeatWidget.getPlotItem().setTitle('Constant-Q Transform')
+        self.tabHeatWidget.getPlotItem().hideAxis('bottom')
+        self.tabHeatWidget.getPlotItem().hideAxis('left')
+        self.tabHeatMap = pg.ImageItem()
+        colormap = cm.get_cmap("plasma")  # cm.get_cmap("CMRmap")
+        colormap._init()
+        lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
+        self.tabHeatMap.setLookupTable(lut)
+        self.tabHeatWidget.addItem(self.tabHeatMap)
+        self.tabHeatMap.setImage(self.tabdetect.specs)
+
+        self.leftWidget = QWidget()
+        self.leftWidget.setFixedWidth(500)
+        self.leftLayout = QVBoxLayout()
+        self.leftLayout.setSpacing(5)
+        self.leftLayout.addWidget(self.filePicker)
+        self.leftLayout.addWidget(self.topSection)
+        self.leftLayout.addWidget(self.tabLabels, alignment=Qt.AlignRight)
+        self.leftWidget.setLayout(self.leftLayout)
+
+        self.layout = QHBoxLayout()
+        self.layout.addWidget(self.leftWidget)
+        self.layout.addWidget(self.tabHeatWidget)
 
         self.window.setLayout(self.layout)
 
@@ -105,6 +130,7 @@ class TabUI:
         self.tabLabelLayout.addWidget(label, alignment=Qt.AlignRight)
         if len(self.tabLabelLayout) > 25:
             self.tabLabelLayout.itemAt(0).widget().setParent(None)
+        self.tabHeatMap.setImage(self.tabdetect.specs)
 
 if __name__ == '__main__':
     tabUI = TabUI()
