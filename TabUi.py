@@ -144,7 +144,7 @@ class TabUI:
                     self.tabdetect.init_model(self.modelFile)
                     self.tabdetect.openFileStream(self.audioFile) # TODO handle file exceptions
                     self.startButton.setText("Stop")
-                    self.threadPool.start(self.handleFileData)
+                    self.threadPool.start(self.handleFileData())
             except:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)

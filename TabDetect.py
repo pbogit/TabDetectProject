@@ -1,7 +1,5 @@
 import time
 import wave
-import threading
-from concurrent.futures.thread import ThreadPoolExecutor
 
 import keras
 import librosa
@@ -27,6 +25,7 @@ class TabDetect:
         self.input_shape = (192, 9, 1)
         self.specs = np.zeros((25, 192))
         self.p = pyaudio.PyAudio()
+        self.count=0
         self.isFileStream = False
         self.waveFile = None
         self.curr_tabs = ''
