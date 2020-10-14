@@ -103,10 +103,13 @@ class TabDetect:
         data = np.frombuffer(self.stream.read(self.chunk_size * 17, exception_on_overflow=False), dtype=np.int16)
         self.applyModel(data)
 
-    def processFile(self, originalData):
-        data = np.frombuffer(originalData, dtype=np.int16)
-        self.stream.write(originalData)
-        self.applyModel(data)
+    def processFile(self):
+        originalData = self.waveFile.readframes(self.chunk_size * 8)
+        while originalData != '':
+            self.stream.write(originalData)
+            data = np.frombuffer(originalData, dtype=np.int16)
+            self.applyModel(data)
+            originalData = self.waveFile.readframes(self.chunk_size * 8)
 
     def applyModel(self, data):
         self.spec = self.preprocess_audio(data)
