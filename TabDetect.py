@@ -41,12 +41,16 @@ class TabDetect:
 
     def openStream(self, index):
         self.isFileStream = False
+        self.sample_rate = 44100
+        self.sample_rate_original = self.sample_rate
         self.stream = self.p.open(format=pyaudio.paInt16, channels=1, rate=self.sample_rate_original,
                                   input=True, frames_per_buffer=self.chunk_size, input_device_index=index)
 
     def openFileStream(self, path):
         self.isFileStream = True
         self.waveFile = wave.open(path, 'rb')
+        self.sample_rate = self.waveFile.getframerate()
+        self.sample_rate_original = self.sample_rate
         self.stream = self.p.open(format=self.p.get_format_from_width(self.waveFile.getsampwidth()), channels=self.waveFile.getnchannels(),
                                   rate=self.waveFile.getframerate(), output=True)
 
@@ -100,16 +104,21 @@ class TabDetect:
                                                              'avg_acc': self.avg_acc})
 
     def processInput(self):
-        data = np.frombuffer(self.stream.read(self.chunk_size * 17, exception_on_overflow=False), dtype=np.int16)
+        data = np.frombuffer(self.stream.read(self.chunk_size * 18-2, exception_on_overflow=False), dtype=np.int16)
         self.applyModel(data)
 
     def processFile(self):
-        originalData = self.waveFile.readframes(self.chunk_size * 8)
+        originalData = self.readFrames()
         while originalData != '':
             self.stream.write(originalData)
-            data = np.frombuffer(originalData, dtype=np.int16)
+            data = np.frombuffer(originalData[0:18428], dtype=np.int16)
             self.applyModel(data)
-            originalData = self.waveFile.readframes(self.chunk_size * 8)
+            originalData = self.readFrames()
+
+    def readFrames(self):
+        nframes = self.chunk_size * int(self.waveFile.getframerate() / self.sample_rate_downs) * 9-2
+        frames = self.waveFile.readframes(nframes)
+        return frames
 
     def applyModel(self, data):
         self.spec = self.preprocess_audio(data)

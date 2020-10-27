@@ -137,6 +137,7 @@ class TabUI:
                 if self.audioDevice.currentText() != "Audio file":
                     self.tabdetect.init_model(self.modelFile)
                     self.tabdetect.openStream(self.audioDevice.currentIndex())
+                    self.timer.timeout.disconnect(self.updateUi)
                     self.timer.timeout.connect(self.handleNewData)
                     self.timer.start(100)
                     self.startButton.setText("Stop")
@@ -145,6 +146,7 @@ class TabUI:
                     self.tabdetect.openFileStream(self.audioFile) # TODO handle file exceptions
                     self.startButton.setText("Stop")
                     self.threadPool.start(self.tabdetect.processFile)
+                    self.timer.timeout.disconnect(self.handleNewData())
                     self.timer.timeout.connect(self.updateUi)
                     self.timer.start(100)
             except:
