@@ -19,8 +19,11 @@ from TabDetect import TabDetect
 class TabUI:
 
     def __init__(self):
-        self.tabdetect = TabDetect()
+        self.tabdetect = TabDetect(self)
         self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.handleNewData)
+        self.ui_timer = QtCore.QTimer()
+        self.ui_timer.timeout.connect(self.updateUi)
         self.app = QApplication(sys.argv)
         self.threadPool = QThreadPool()
 
@@ -137,18 +140,14 @@ class TabUI:
                 if self.audioDevice.currentText() != "Audio file":
                     self.tabdetect.init_model(self.modelFile)
                     self.tabdetect.openStream(self.audioDevice.currentIndex())
-                    self.timer.timeout.disconnect(self.updateUi)
-                    self.timer.timeout.connect(self.handleNewData)
                     self.timer.start(100)
                     self.startButton.setText("Stop")
                 else:
                     self.tabdetect.init_model(self.modelFile)
-                    self.tabdetect.openFileStream(self.audioFile) # TODO handle file exceptions
+                    self.tabdetect.openFileStream(self.audioFile)
+                    self.ui_timer.start(100)
                     self.startButton.setText("Stop")
                     self.threadPool.start(self.tabdetect.processFile)
-                    self.timer.timeout.disconnect(self.handleNewData())
-                    self.timer.timeout.connect(self.updateUi)
-                    self.timer.start(100)
             except:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -161,7 +160,9 @@ class TabUI:
                 msg.exec_()
         else:
             self.timer.stop()
+            self.ui_timer.stop()
             self.tabdetect.closeStream()
+            self.tabdetect.wave_pos = 0
             for i in reversed(range(self.tabLabelLayout.count())):
                 self.tabLabelLayout.itemAt(i).widget().setParent(None)
             self.fretboard.draw(fingering=[None, None, None, None, None, None])

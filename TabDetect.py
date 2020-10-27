@@ -13,9 +13,11 @@ from keras import backend as K
 class TabDetect:
 
     def __init__(self,
+                 tabUi,
                  chunk_size=512,
                  sample_rate=44100,
                  ):
+        self.tabUi = tabUi
         self.chunk_size = chunk_size
         self.sample_rate = sample_rate
         self.sample_rate_original = sample_rate
@@ -25,9 +27,10 @@ class TabDetect:
         self.input_shape = (192, 9, 1)
         self.specs = np.zeros((25, 192))
         self.p = pyaudio.PyAudio()
-        self.count=0
+        self.wave_pos = 0
+        self.wave_len = 0
         self.isFileStream = False
-        self.waveFile = None
+        self.audioFile = None
         self.curr_tabs = ''
         self.curr_frets = [None, None, None, None, None, None]
         self.spec = None
@@ -48,11 +51,12 @@ class TabDetect:
 
     def openFileStream(self, path):
         self.isFileStream = True
-        self.waveFile = wave.open(path, 'rb')
-        self.sample_rate = self.waveFile.getframerate()
+        self.audioFile = librosa.load(path, sr=22050, mono=True)
+        self.sample_rate = 22050
         self.sample_rate_original = self.sample_rate
-        self.stream = self.p.open(format=self.p.get_format_from_width(self.waveFile.getsampwidth()), channels=self.waveFile.getnchannels(),
-                                  rate=self.waveFile.getframerate(), output=True)
+        self.wave_len = len(self.audioFile[0])
+        self.stream = self.p.open(format=pyaudio.paFloat32, channels=1,
+                                  rate=22050, output=True, stream_callback=self.processFile, frames_per_buffer=4096)
 
     def closeStream(self):
         self.stream.close()
@@ -60,7 +64,8 @@ class TabDetect:
     def preprocess_audio(self, data):
         data = data.astype(float)
         data = librosa.util.normalize(data)
-        data = librosa.resample(data, self.sample_rate, self.sample_rate_downs)
+        if not self.isFileStream:
+            data = librosa.resample(data, self.sample_rate, self.sample_rate_downs)
         data = np.abs(librosa.cqt(data, hop_length=self.chunk_size, sr=self.sample_rate_downs, n_bins=192,
                                   bins_per_octave=24))
         return data
@@ -102,22 +107,25 @@ class TabDetect:
                                              custom_objects={'catcross_by_string': self.catcross_by_string,
                                                              'softmax_by_string': self.softmax_by_string,
                                                              'avg_acc': self.avg_acc})
+        self.model.build()
 
     def processInput(self):
         data = np.frombuffer(self.stream.read(self.chunk_size * 18-2, exception_on_overflow=False), dtype=np.int16)
         self.applyModel(data)
 
-    def processFile(self):
-        originalData = self.readFrames()
-        while originalData != '':
-            self.stream.write(originalData)
-            data = np.frombuffer(originalData[0:18428], dtype=np.int16)
-            self.applyModel(data)
-            originalData = self.readFrames()
+    def processFile(self, _data, frames, _time, status_flags):
+        left = self.wave_pos
+        right = min(self.wave_pos + frames, self.wave_len - 1)
+        data = np.ndarray.tobytes(self.audioFile[0][left: right])
+        self.applyModel(self.audioFile[0][left: right])
+        self.wave_pos += frames
+        if self.wave_pos >= self.wave_len:
+            return data, pyaudio.paComplete
+        return data, pyaudio.paContinue
 
     def readFrames(self):
-        nframes = self.chunk_size * int(self.waveFile.getframerate() / self.sample_rate_downs) * 9-2
-        frames = self.waveFile.readframes(nframes)
+        nframes = self.chunk_size * int(self.audioFile.getframerate() / self.sample_rate_downs) * 9 - 2
+        frames = self.audioFile.readframes(nframes)
         return frames
 
     def applyModel(self, data):
