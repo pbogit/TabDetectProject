@@ -43,11 +43,11 @@ class TabDetect:
         self.audioFile.setnchannels(1)
         self.audioFile.setnframes(8192)
         self.audioFile.setframerate(self.sample_rate)
-        self.audioFile.setsampwidth(4)
+        self.audioFile.setsampwidth(2)
         self.textFile = open("input_tabs.txt", "w")
         self.textFile.write('EADGBE\n')
-        self.stream = self.p.open(format=pyaudio.paFloat32, channels=1, rate=self.sample_rate,
-                                  input=True, frames_per_buffer=8192, input_device_index=index,
+        self.stream = self.p.open(format=pyaudio.paInt16, channels=1, rate=self.sample_rate,
+                                  input=True, frames_per_buffer=4096, input_device_index=index,
                                   stream_callback=self.processInput)
 
 
@@ -112,7 +112,7 @@ class TabDetect:
 
     def processInput(self, _data, frames, _time, status_flags):
         self.audioFile.writeframes(_data)
-        data = np.frombuffer(_data)
+        data = np.frombuffer(_data, dtype=np.int16)
         self.applyModel(data)
         return data, pyaudio.paContinue
 
