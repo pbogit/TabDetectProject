@@ -21,9 +21,7 @@ class TabUI:
     def __init__(self):
         self.tabdetect = TabDetect(self)
         self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.handleNewData)
-        self.ui_timer = QtCore.QTimer()
-        self.ui_timer.timeout.connect(self.updateUi)
+        self.timer.timeout.connect(self.updateUi)
         self.app = QApplication(sys.argv)
         self.threadPool = QThreadPool()
 
@@ -137,17 +135,13 @@ class TabUI:
     def processStartButton(self):
         if self.startButton.text() == "Start":
             try:
+                self.tabdetect.init_model(self.modelFile)
                 if self.audioDevice.currentText() != "Audio file":
-                    self.tabdetect.init_model(self.modelFile)
                     self.tabdetect.openStream(self.audioDevice.currentIndex())
-                    self.timer.start(100)
-                    self.startButton.setText("Stop")
                 else:
-                    self.tabdetect.init_model(self.modelFile)
                     self.tabdetect.openFileStream(self.audioFile)
-                    self.ui_timer.start(100)
-                    self.startButton.setText("Stop")
-                    self.threadPool.start(self.tabdetect.processFile)
+                self.timer.start(200)
+                self.startButton.setText("Stop")
             except:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -160,7 +154,6 @@ class TabUI:
                 msg.exec_()
         else:
             self.timer.stop()
-            self.ui_timer.stop()
             self.tabdetect.closeStream()
             self.tabdetect.wave_pos = 0
             for i in reversed(range(self.tabLabelLayout.count())):
@@ -172,11 +165,6 @@ class TabUI:
             self.tabdetect.specs = np.zeros((25, 192))
             self.tabHeatMap.setImage(self.tabdetect.specs)
             self.startButton.setText("Start")
-
-
-    def handleNewData(self):
-        self.tabdetect.processInput()
-        self.updateUi()
 
     def updateUi(self):
         tabs = self.tabdetect.curr_tabs
