@@ -56,7 +56,7 @@ class TabDetect:
         self.audioFile = librosa.load(path, sr=self.sample_rate, mono=True)
         self.wave_len = len(self.audioFile[0])
         self.stream = self.p.open(format=pyaudio.paFloat32, channels=1,
-                                  rate=22050, output=True, stream_callback=self.processFile, frames_per_buffer=4096)
+                                  rate=self.sample_rate, output=True, stream_callback=self.processFile, frames_per_buffer=4096)
 
     def closeStream(self):
         if not self.isFileStream :
