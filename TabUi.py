@@ -1,7 +1,6 @@
 import os
 import sys
 
-import fretboardgtr
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QThreadPool
 from PyQt5.QtGui import QIcon

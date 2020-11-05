@@ -47,7 +47,7 @@ class TabDetect:
         self.textFile = open("input_tabs.txt", "w")
         self.textFile.write('EADGBE\n')
         self.stream = self.p.open(format=pyaudio.paInt16, channels=1, rate=self.sample_rate,
-                                  input=True, frames_per_buffer=4096, input_device_index=index,
+                                  input=True, frames_per_buffer=self.chunk_size*9-1, input_device_index=index,
                                   stream_callback=self.processInput)
 
 
@@ -56,16 +56,15 @@ class TabDetect:
         self.audioFile = librosa.load(path, sr=self.sample_rate, mono=True)
         self.wave_len = len(self.audioFile[0])
         self.stream = self.p.open(format=pyaudio.paFloat32, channels=1,
-                                  rate=self.sample_rate, output=True, stream_callback=self.processFile, frames_per_buffer=4096)
+                                  rate=self.sample_rate, output=True, stream_callback=self.processFile, frames_per_buffer=self.chunk_size*9-1)
 
     def closeStream(self):
-        if not self.isFileStream :
+        if not self.isFileStream:
             self.textFile.close()
             self.audioFile.close()
         self.stream.close()
 
     def preprocess_audio(self, data):
-        data = data.astype(float)
         data = librosa.util.normalize(data)
         data = np.abs(librosa.cqt(data, hop_length=self.chunk_size, sr=self.sample_rate, n_bins=192,
                                   bins_per_octave=24))
@@ -122,7 +121,8 @@ class TabDetect:
         data = np.ndarray.tobytes(self.audioFile[0][left: right])
         self.applyModel(self.audioFile[0][left: right])
         self.wave_pos += frames
-        if self.wave_pos >= self.wave_len:
+        if self.wave_pos >= (self.wave_len - frames):
+            self.tabUi.startButton.click()
             return data, pyaudio.paComplete
         return data, pyaudio.paContinue
 

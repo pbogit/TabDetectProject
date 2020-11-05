@@ -1,78 +1,80 @@
 name: tabProject
 channels:
-  - anaconda
   - defaults
 dependencies:
-  - ca-certificates=2020.6.24=0
-  - certifi=2020.6.20=py38_0
-  - openssl=1.1.1g=he774522_1
-  - pip=20.2.2=py38_0
+  - ca-certificates=2020.10.14=0
+  - certifi=2020.6.20=pyhd3eb1b0_3
+  - openssl=1.1.1h=he774522_0
+  - pip=20.2.4=py38haa95532_0
   - portaudio=19.6.0=he774522_4
   - pyaudio=0.2.11=py38he774522_2
-  - python=3.8.5=he1778fa_0
-  - setuptools=49.6.0=py38_0
-  - sqlite=3.32.3=h2a8f88b_0
+  - python=3.8.5=h5fd99cc_1
+  - setuptools=50.3.0=py38haa95532_1
+  - sqlite=3.33.0=h2a8f88b_0
   - vc=14.1=h0510ff6_4
   - vs2015_runtime=14.16.27012=hf0eaf9b_3
-  - wheel=0.34.2=py38_0
+  - wheel=0.35.1=py_0
   - wincertstore=0.2=py38_0
   - zlib=1.2.11=h62dcd97_4
   - pip:
-    - absl-py==0.9.0
-    - anaconda==0.0.1.1
+    - absl-py==0.11.0
     - appdirs==1.4.4
     - astunparse==1.6.3
-    - audioread==2.1.8
+    - audioread==2.1.9
+    - cached-property==1.5.2
     - cachetools==4.1.1
-    - cffi==1.14.2
+    - cffi==1.14.3
     - chardet==3.0.4
+    - cycler==0.10.0
     - decorator==4.4.2
-    - fretboardgtr==0.0.4
     - gast==0.3.3
-    - google-auth==1.20.1
-    - google-auth-oauthlib==0.4.1
+    - google-auth==1.23.0
+    - google-auth-oauthlib==0.4.2
     - google-pasta==0.2.0
-    - grpcio==1.31.0
+    - grpcio==1.33.2
     - h5py==2.10.0
     - idna==2.10
-    - joblib==0.16.0
+    - joblib==0.17.0
     - keras==2.4.3
     - keras-preprocessing==1.1.2
-    - librosa==0.8.0
-    - llvmlite==0.34.0
-    - markdown==3.2.2
+    - kiwisolver==1.3.1
+    - librosa==0.7.2
+    - llvmlite==0.32.1
+    - markdown==3.3.3
     - matplotlib==3.3.2
-    - numba==0.51.0
-    - numpy==1.18.5
+    - numba==0.49.1
+    - numpy==1.18.4
     - oauthlib==3.1.0
     - opt-einsum==3.3.0
     - packaging==20.4
-    - pooch==1.1.1
+    - pillow==8.0.1
+    - pooch==1.2.0
     - protobuf==3.13.0
     - pyasn1==0.4.8
     - pyasn1-modules==0.2.8
     - pycparser==2.20
     - pyparsing==2.4.7
-    - pyqt5==5.15.0
-    - pyqt5-sip==12.8.0
+    - pyqt5==5.15.1
+    - pyqt5-sip==12.8.1
     - pyqtgraph==0.11.0
+    - python-dateutil==2.8.1
     - pyyaml==5.3.1
     - requests==2.24.0
     - requests-oauthlib==1.3.0
     - resampy==0.2.2
     - rsa==4.6
     - scikit-learn==0.23.2
-    - scipy==1.4.1
+    - scipy==1.5.4
     - six==1.15.0
     - soundfile==0.10.3.post1
     - svgwrite==1.4
     - tensorboard==2.3.0
     - tensorboard-plugin-wit==1.7.0
-    - tensorflow==2.3.0
+    - tensorflow==2.3.1
     - tensorflow-estimator==2.3.0
     - termcolor==1.1.0
     - threadpoolctl==2.1.0
-    - urllib3==1.25.10
+    - urllib3==1.25.11
     - werkzeug==1.0.1
     - wrapt==1.12.1
 
