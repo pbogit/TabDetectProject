@@ -1,3 +1,4 @@
+import struct
 import wave
 
 import keras
@@ -47,16 +48,16 @@ class TabDetect:
         self.textFile = open("input_tabs.txt", "w")
         self.textFile.write('EADGBE\n')
         self.stream = self.p.open(format=pyaudio.paInt16, channels=1, rate=self.sample_rate,
-                                  input=True, frames_per_buffer=self.chunk_size*9-1, input_device_index=index,
+                                  input=True, frames_per_buffer=self.chunk_size * 9 - 1, input_device_index=index,
                                   stream_callback=self.processInput)
-
 
     def openFileStream(self, path):
         self.isFileStream = True
         self.audioFile = librosa.load(path, sr=self.sample_rate, mono=True)
         self.wave_len = len(self.audioFile[0])
         self.stream = self.p.open(format=pyaudio.paFloat32, channels=1,
-                                  rate=self.sample_rate, output=True, stream_callback=self.processFile, frames_per_buffer=self.chunk_size*9-1)
+                                  rate=self.sample_rate, output=True, stream_callback=self.processFile,
+                                  frames_per_buffer=self.chunk_size * 9 - 1)
 
     def closeStream(self):
         if not self.isFileStream:
@@ -108,10 +109,13 @@ class TabDetect:
                                                              'softmax_by_string': self.softmax_by_string,
                                                              'avg_acc': self.avg_acc})
 
-
     def processInput(self, _data, frames, _time, status_flags):
+        amplitude = np.sum(np.abs(np.fromstring(_data, 'Int16')))
         self.audioFile.writeframes(_data)
         data = np.frombuffer(_data, dtype=np.int16)
+        data = data.astype(float)
+        if amplitude <= 100000:
+            data.fill(0)
         self.applyModel(data)
         return data, pyaudio.paContinue
 
@@ -137,6 +141,6 @@ class TabDetect:
         self.specs = np.delete(self.specs, 0, axis=0)
         classes = self.model.predict(self.spec.reshape((1, 192, 9, 1)))[0]
         self.curr_tabs, self.curr_frets = self.formatTabs(classes)
-        if not self.isFileStream:
+        if not self.isFileStream and not self.textFile.closed:
             self.textFile.write(self.curr_tabs.replace('\n', '')[::-1])
             self.textFile.write('\n')
