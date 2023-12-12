@@ -3,7 +3,7 @@ import sys
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QThreadPool
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, \
     QFileDialog, QLineEdit, QMessageBox
@@ -23,10 +23,11 @@ class TabUI:
         self.timer.timeout.connect(self.updateUi)
         self.app = QApplication(sys.argv)
         self.threadPool = QThreadPool()
+        self.scalefactor=1.7
 
         self.window = QWidget()
-        self.window.setGeometry(100, 100, 1000, 370)
-        self.window.setFixedSize(1000, 350)
+        self.window.setGeometry(100, 100, 1000*self.scalefactor, 370*self.scalefactor)
+        self.window.setFixedSize(1000*self.scalefactor, 350*self.scalefactor)
         self.window.setWindowTitle("TabDetect")
         self.window.setWindowIcon(QIcon("icon.png"))
 
@@ -40,7 +41,7 @@ class TabUI:
         self.modelFileButton.clicked.connect(self.selectModel)
         self.modelFileLabel = QLineEdit("No model file selected")
         self.modelFileWidget = QWidget()
-        self.modelFileWidget.setFixedSize(450, 20)
+        self.modelFileWidget.setFixedSize(450*self.scalefactor, 20*self.scalefactor)
         self.modelFileLayout = QHBoxLayout()
         self.modelFileLayout.setContentsMargins(0, 0, 0, 0)
         self.modelFileWidget.setLayout(self.modelFileLayout)
@@ -51,7 +52,7 @@ class TabUI:
         self.audioFileButton.clicked.connect(self.selectAudio)
         self.audioFileLabel = QLineEdit("No audio file selected")
         self.audioFileWidget = QWidget()
-        self.audioFileWidget.setFixedSize(450, 20)
+        self.audioFileWidget.setFixedSize(450*self.scalefactor, 20*self.scalefactor)
         self.audioFileLayout = QHBoxLayout()
         self.audioFileLayout.setContentsMargins(0, 0, 0, 0)
         self.audioFileWidget.setLayout(self.audioFileLayout)
@@ -59,7 +60,7 @@ class TabUI:
         self.audioFileLayout.addWidget(self.audioFileLabel)
 
         self.topSection = QWidget()
-        self.topSection.setFixedSize(450, 20)
+        self.topSection.setFixedSize(450*self.scalefactor, 20*self.scalefactor)
         self.topSectionLayout = QHBoxLayout()
         self.topSectionLayout.setContentsMargins(0, 0, 0, 0)
         self.topSection.setLayout(self.topSectionLayout)
@@ -67,7 +68,7 @@ class TabUI:
         self.topSectionLayout.addWidget(self.startButton)
 
         self.tabLabels = QWidget()
-        self.tabLabels.setMinimumHeight(100)
+        self.tabLabels.setMinimumHeight(100*self.scalefactor)
         self.tabLabelLayout = QHBoxLayout()
         self.tabLabelLayout.setSpacing(0)
         self.tabLabelLayout.setContentsMargins(0, 0, 0, 0)
@@ -97,7 +98,7 @@ class TabUI:
         self.tabHeatMap.setImage(self.tabdetect.specs)
 
         self.leftWidget = QWidget()
-        self.leftWidget.setFixedWidth(500)
+        self.leftWidget.setFixedWidth(500*self.scalefactor)
         self.leftLayout = QVBoxLayout()
         self.leftLayout.setSpacing(5)
         self.leftLayout.addWidget(self.topSection)
@@ -168,7 +169,8 @@ class TabUI:
     def updateUi(self):
         tabs = self.tabdetect.curr_tabs
         label = QLabel(tabs)
-        label.setFixedSize(18, 120)
+        label.setFixedSize(18*self.scalefactor, 120*self.scalefactor)
+        label.setFont(QFont('Arial', 15))
         self.tabLabelLayout.addWidget(label, alignment=Qt.AlignRight)
         if len(self.tabLabelLayout) > 25:
             self.tabLabelLayout.itemAt(0).widget().setParent(None)
