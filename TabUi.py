@@ -23,11 +23,11 @@ class TabUI:
         self.timer.timeout.connect(self.updateUi)
         self.app = QApplication(sys.argv)
         self.threadPool = QThreadPool()
-        self.scalefactor=1.7
+        self.scalefactor=2.5
 
         self.window = QWidget()
-        self.window.setGeometry(100, 100, 1000*self.scalefactor, 370*self.scalefactor)
-        self.window.setFixedSize(1000*self.scalefactor, 350*self.scalefactor)
+        self.window.setGeometry(100, 100, 550*self.scalefactor, 370*self.scalefactor)
+        self.window.setFixedSize(550*self.scalefactor, 350*self.scalefactor)
         self.window.setWindowTitle("TabDetect")
         self.window.setWindowIcon(QIcon("icon.png"))
 
@@ -85,18 +85,6 @@ class TabUI:
         self.fretboardWidget.load(self.fretboardPath)
         os.remove(self.fretboardPath)
 
-        self.tabHeatWidget = pg.PlotWidget()
-        self.tabHeatWidget.getPlotItem().setTitle('Constant-Q Transform')
-        self.tabHeatWidget.getPlotItem().hideAxis('bottom')
-        self.tabHeatWidget.getPlotItem().hideAxis('left')
-        self.tabHeatMap = pg.ImageItem()
-        colormap = cm.get_cmap("plasma")
-        colormap._init()
-        lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
-        self.tabHeatMap.setLookupTable(lut)
-        self.tabHeatWidget.addItem(self.tabHeatMap)
-        self.tabHeatMap.setImage(self.tabdetect.specs)
-
         self.leftWidget = QWidget()
         self.leftWidget.setFixedWidth(500*self.scalefactor)
         self.leftLayout = QVBoxLayout()
@@ -110,7 +98,6 @@ class TabUI:
 
         self.layout = QHBoxLayout()
         self.layout.addWidget(self.leftWidget)
-        self.layout.addWidget(self.tabHeatWidget)
 
         self.window.setLayout(self.layout)
 
@@ -140,7 +127,7 @@ class TabUI:
                     self.tabdetect.openStream(self.audioDevice.currentIndex())
                 else:
                     self.tabdetect.openFileStream(self.audioFile)
-                self.timer.start(200)
+                self.timer.start(50)
                 self.startButton.setText("Stop")
             except:
                 msg = QMessageBox()
@@ -163,7 +150,6 @@ class TabUI:
             self.fretboardWidget.load(self.fretboardPath)
             os.remove(self.fretboardPath)
             self.tabdetect.specs = np.zeros((25, 192))
-            self.tabHeatMap.setImage(self.tabdetect.specs)
             self.startButton.setText("Start")
 
     def updateUi(self):
@@ -178,7 +164,6 @@ class TabUI:
         self.fretboard.save()
         self.fretboardWidget.load(self.fretboardPath)
         os.remove(self.fretboardPath)
-        self.tabHeatMap.setImage(self.tabdetect.specs)
 
 if __name__ == '__main__':
     tabUI = TabUI()
